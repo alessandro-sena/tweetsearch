@@ -8,7 +8,6 @@ import languageIdentifier
 languageIdentifier.load('Python-Language-Detector/trigrams/')
 
 # Twitter Related Functions
-
 def filter_tweet(tweet, langs=['en']):
     try:
         # Extracts urls
@@ -58,3 +57,15 @@ def tokenize_tweet(text):
     text = t   
 
     return text
+
+# Get the trigrams of a text, the trigrams contains only words
+def get_trigrams(text):
+    tokens = re.compile('\w+').findall(text.lower()) 
+    trigrams = set()
+    for i in range(0, len(tokens)-2):
+        trigrams.add(tuple(tokens[i:i+3]))
+
+    return trigrams
+
+
+
