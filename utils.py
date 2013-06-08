@@ -62,10 +62,7 @@ def tokenize_tweet(text):
 def get_trigrams(text):
     tokens = re.compile('\w+').findall(text.lower()) 
     trigrams = set()
+
     for i in range(0, len(tokens)-2):
         trigrams.add(tuple(tokens[i:i+3]))
-
     return trigrams
-
-
-

@@ -3,6 +3,7 @@ import cjson
 import os 
 import math
 import utils
+import re
 
 
 class TweetSearch():
@@ -24,6 +25,7 @@ class TweetSearch():
         self.norms = defaultdict(float)
 
     def index_collection(self, collection_dir):
+        i = 0
         cwd = os.getcwd()
         os.chdir(collection_dir)
         for f in os.listdir("."):
@@ -38,8 +40,16 @@ class TweetSearch():
                 try:
                     if utils.filter_tweet(tweet):
                         self.index_tweet(tweet)
+                        i += 1
                 except Exception, error:
+
                     print error
+
+                if i > 100000:
+                    # Update the idf and norms
+                    self.update_idf()
+                    self.update_norms()
+                    return 
             fin.close()
         os.chdir(cwd)
 
@@ -48,14 +58,16 @@ class TweetSearch():
         self.update_norms()
         print "indexed"
 
-
     def index_tweet(self, tweet):
         tid = tweet['id']
         text = tweet['text']
         counter = defaultdict(int)
 
-        tokens = utils.tokenize_tweet(text)
-    
+        #tokens = utils.tokenize_tweet(text)
+        # Extract only the words as tokens
+        tokens = re.compile('\w+').findall(text.lower()) 
+
+
         for token in tokens:
             counter[token] += 1
 
@@ -85,12 +97,14 @@ class TweetSearch():
 
         self.norms = norms        
 
-
     def search(self, query):
 
         accumulator = defaultdict(float)
         counter = defaultdict(int)
-        tokens = utils.tokenize_tweet(query)
+
+        # Extract only the words as tokens
+        tokens = re.compile('\w+').findall(query.lower()) 
+        #tokens = utils.tokenize_tweet(query)
         
         for token in tokens:
             counter[token] += 1
@@ -102,7 +116,6 @@ class TweetSearch():
             query_norm += (tf*self.idf[word])**2
             counter[word] = tf
         query_norm = math.sqrt(query_norm)
-        print query_norm
 
 
         for word, qtf in counter.iteritems():
@@ -111,24 +124,36 @@ class TweetSearch():
 
         scores = [ (tid, value/(query_norm*self.norms[tid])) for tid, value in accumulator.iteritems()] 
 
-        sorted(scores, key=lambda tup: tup[1])[::-1]
+        scores = sorted(scores, key=lambda tup: tup[1])[::-1]
 
         return scores
 
+def test():
+    ts = TweetSearch()
+    #ts.index_collection('stream')
+    ts.index_tweet({'id': 1, 'text': "To do is to be To be is to do"})
+    ts.index_tweet({'id': 2, 'text': "To be or not to be I am what I am"})
+    ts.index_tweet({'id': 3, 'text': "I think therefore I am Do be do be do"})
+    ts.index_tweet({'id': 4, 'text': "Do do do da da da Let it be Let it be"})
+    ts.update_idf()
+    ts.update_norms()
+
+
+    print '--------------------'
+    for item in ts.idf:
+        print "%s: %f" % item
+
+    print '--------------------'
+    for item in ts.norms:
+        print "%s: %f" % item
+
+    print ts.search("to do")
 
 def main():
     ts = TweetSearch()
     ts.index_collection('stream')
-    #ts.index_tweet({'id': 1, 'text': "To do is to be To be is to do"})
-    #ts.index_tweet({'id': 2, 'text': "To be or not to be I am what I am"})
-    #ts.index_tweet({'id': 3, 'text': "I think therefore I am Do be do be do"})
-    #ts.index_tweet({'id': 4, 'text': "Do do do da da da Let it be Let it be"}
-    #ts.update_idf()
-    #ts.update_norms()
-    #print ts.idf
-    #print ts.norms
-    print ts.search("Also Angelina Jolie can \"challenge\" society's views on the woman's body because her body already made her millions of dollars! #notsorry")[:10]
-    print ts.norms[334687426675085312]
+    print ts.search('so excited for the last few eps of this season!!! ahhh')[:10]
+
 if __name__ == "__main__":
     main()    
 
