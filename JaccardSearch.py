@@ -9,28 +9,22 @@ class JaccardSearch():
 
     def __init__(self):
 
+
+        # Stores the trigrams of the tweets
         self.tweets = {}
-
-        # Inverted list index
-        self.index = defaultdict(list)
-
-        # Document frequency of each word
-        self.df = defaultdict(int)
 
         # Number of Tweets in the index
         self.N = 0
 
-        # IDF of each word
-        self.idf = defaultdict(float)
-
-        # Norm of each tweet
-        self.norms = defaultdict(float)
-
-    def index_collection(self, collection_dir):
+    
+    def index_collection(self, collection_dir, base_limit=10**7):
+        stop = False
         i = 0
         cwd = os.getcwd()
         os.chdir(collection_dir)
         for f in os.listdir("."):
+            if stop:
+                break
             fin = open(f)
             for line in fin:
                 try:
@@ -46,8 +40,9 @@ class JaccardSearch():
                 except Exception, error:
                     print error
 
-                if i > 100000:
-                    return
+                if i >= base_limit:
+                    stop = True
+                    break
             fin.close()
         os.chdir(cwd)
 
@@ -93,6 +88,6 @@ def main():
     print js.N
 
 if __name__ == "__main__":
-    test()    
+    main()    
 
                                 

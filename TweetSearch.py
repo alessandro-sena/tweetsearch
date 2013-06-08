@@ -24,11 +24,15 @@ class TweetSearch():
         # Norm of each tweet
         self.norms = defaultdict(float)
 
-    def index_collection(self, collection_dir):
+    def index_collection(self, collection_dir, base_limit=10**7):
+        stop = False
         i = 0
         cwd = os.getcwd()
         os.chdir(collection_dir)
         for f in os.listdir("."):
+            print f
+            if stop:
+                break
             fin = open(f)
             for line in fin:
                 try:
@@ -42,14 +46,14 @@ class TweetSearch():
                         self.index_tweet(tweet)
                         i += 1
                 except Exception, error:
-
                     print error
+                    continue
+                print line.strip()
 
-                if i > 100000:
-                    # Update the idf and norms
-                    self.update_idf()
-                    self.update_norms()
-                    return 
+
+                if i > base_limit:
+                    stop = True
+                    break
             fin.close()
         os.chdir(cwd)
 
@@ -59,6 +63,7 @@ class TweetSearch():
         print "indexed"
 
     def index_tweet(self, tweet):
+        print tweet
         tid = tweet['id']
         text = tweet['text']
         counter = defaultdict(int)
@@ -112,11 +117,12 @@ class TweetSearch():
         # Calculates the query norm
         query_norm = 0.0 
         for word, freq in counter.iteritems():
-            tf = 1.0 + math.log(freq, 2)            
+            print "%s - %f" % (word, self.idf[word])
+            tf = freq # 1+math.log(freq, 2)            
             query_norm += (tf*self.idf[word])**2
             counter[word] = tf
         query_norm = math.sqrt(query_norm)
-
+        print query_norm
 
         for word, qtf in counter.iteritems():
             for tid, dtf in self.index[word]:
@@ -130,21 +136,15 @@ class TweetSearch():
 
 def test():
     ts = TweetSearch()
-    #ts.index_collection('stream')
-    ts.index_tweet({'id': 1, 'text': "To do is to be To be is to do"})
-    ts.index_tweet({'id': 2, 'text': "To be or not to be I am what I am"})
-    ts.index_tweet({'id': 3, 'text': "I think therefore I am Do be do be do"})
-    ts.index_tweet({'id': 4, 'text': "Do do do da da da Let it be Let it be"})
-    ts.update_idf()
-    ts.update_norms()
-
+    ts.index_collection('test_collection')
+    print ts.N
 
     print '--------------------'
-    for item in ts.idf:
+    for item in ts.idf.iteritems():
         print "%s: %f" % item
 
     print '--------------------'
-    for item in ts.norms:
+    for item in ts.norms.iteritems():
         print "%s: %f" % item
 
     print ts.search("to do")
@@ -152,9 +152,10 @@ def test():
 def main():
     ts = TweetSearch()
     ts.index_collection('stream')
+
     print ts.search('so excited for the last few eps of this season!!! ahhh')[:10]
 
 if __name__ == "__main__":
-    main()    
+    test()    
 
                                 
