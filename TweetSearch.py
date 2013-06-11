@@ -48,8 +48,6 @@ class TweetSearch():
                 except Exception, error:
                     print error
                     continue
-                print line.strip()
-
 
                 if i > base_limit:
                     stop = True
@@ -63,7 +61,6 @@ class TweetSearch():
         print "indexed"
 
     def index_tweet(self, tweet):
-        print tweet
         tid = tweet['id']
         text = tweet['text']
         counter = defaultdict(int)
@@ -117,12 +114,10 @@ class TweetSearch():
         # Calculates the query norm
         query_norm = 0.0 
         for word, freq in counter.iteritems():
-            print "%s - %f" % (word, self.idf[word])
             tf = freq # 1+math.log(freq, 2)            
             query_norm += (tf*self.idf[word])**2
             counter[word] = tf
         query_norm = math.sqrt(query_norm)
-        print query_norm
 
         for word, qtf in counter.iteritems():
             for tid, dtf in self.index[word]:
